@@ -1,15 +1,14 @@
-import React, { useEffect, useState, Suspense } from 'react'
-import {
-  Environment,
-  MeshDistortMaterial,
-  Sphere,
-  Text,
-} from '@react-three/drei'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { useA11y, useUserPreferences } from '@react-three/a11y'
+// Not really flat... 😂
+// cool tool for maps
+// https://cpetry.github.io/NormalMap-Online/
+import React, { Suspense, useState } from 'react'
+import { Environment, MeshDistortMaterial, Sphere } from '@react-three/drei'
 import { useSpring } from '@react-spring/core'
 import { a } from '@react-spring/three'
 import { Vector3 } from 'three'
+import { useLoader } from 'react-three-fiber'
+import { TextureLoader } from 'three'
+import { useA11y, useUserPreferences } from '@react-three/a11y'
 
 const M = a(MeshDistortMaterial)
 
@@ -24,6 +23,7 @@ const getInitialMarkers = () => {
 }
 
 const getMarkerPoint = (lat, lon, radius = 1) => {
+  // this should be updated since we are not working with sphere
   const phi = (90 - lat) * (Math.PI / 180),
     theta = (lon + 180) * (Math.PI / 180),
     x = -(radius * Math.sin(phi) * Math.cos(theta)),
@@ -49,40 +49,39 @@ const Marker = ({ position }) => {
   )
 }
 
+const Plane = (props) => {
+  const texture = useLoader(TextureLoader, 'flat_earth_cover.jpeg')
+  const normal = useLoader(TextureLoader, 'flat_earth_normal.png')
+  const displacement = useLoader(TextureLoader, 'flat_earth_displacement.png')
+
+  return (
+    <mesh position={new Vector3(0, 0, -0.5)} {...props}>
+      <planeGeometry args={[5, 5, 150, 150]} />
+      <meshStandardMaterial
+        map={texture}
+        normalMap={normal}
+        attach='material'
+        displacementMap={displacement}
+      />
+    </mesh>
+  )
+}
+
 export default function Earth(props) {
-  const [earthModel, setEarthModel] = useState(null)
   const [markers, setMarkers] = useState(getInitialMarkers())
 
   const addMarker = (e) => {
+    // intersection won't work...
     const intersection = e.intersections[0]
     if (intersection) {
       setMarkers([...markers, { position: intersection.point.toArray() }])
     }
   }
 
-  useEffect(() => {
-    const loader = new GLTFLoader()
-    loader.load('/earth/scene.gltf', async (gltf) => {
-      const nodes = await gltf.parser.getDependencies('node')
-      setEarthModel(nodes[5])
-    })
-  }, [])
-
   return (
     <Suspense fallback={null}>
-      {/* <axesHelper args={[5]} /> */}
-      {!earthModel && (
-        <Text color='white' anchorX='center' anchorY='middle' fontSize={2}>
-          Loading...
-        </Text>
-      )}
-      {earthModel && (
-        <mesh
-          material={earthModel.material}
-          geometry={earthModel.geometry}
-          onClick={addMarker}
-        />
-      )}
+      <axesHelper args={[5]} />
+      <Plane onClick={addMarker} />
       {markers.map((marker, index) => (
         <Marker key={index} position={marker.position} />
       ))}

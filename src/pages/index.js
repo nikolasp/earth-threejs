@@ -5,11 +5,16 @@ const Earth = dynamic(() => import('@/components/canvas/Earth'), {
   ssr: false,
 })
 
+const FlatEarth = dynamic(() => import('@/components/canvas/FlatEarth'), {
+  ssr: false,
+})
+
 const Page = ({ title }) => {
   useStore.setState({ title })
   return (
     <>
-      <Earth r3f/>
+      {/* <Earth r3f/> */}
+      <FlatEarth r3f />
     </>
   )
 }
